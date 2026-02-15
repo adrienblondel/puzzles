@@ -37,18 +37,18 @@ except Exception:
 
 # ======================== SAFETY ========================
 pyautogui.FAILSAFE = True  # Move mouse to top-left corner to abort
-pyautogui.PAUSE = 0.01
+pyautogui.PAUSE = 0.001
 
 # ======================== CONFIGURATION ========================
 
 # Delays (seconds) - increase if game is sluggish
-CLICK_DELAY = 0.04          # Delay after each click
-MOVE_DELAY = 0.01           # Mouse move duration
-DRAG_DELAY = 0.02           # Delay during drag operations
+CLICK_DELAY = 0.005          # Delay after each click
+MOVE_DELAY = 0.005           # Mouse move duration
+DRAG_DELAY = 0.005           # Delay during drag operations
 SCAN_STEP = 40              # Pixels between scan points in border areas
 DETECTION_MOVE = 70         # Pixels to move for piece-on-cursor detection
 DETECTION_THRESHOLD = 12    # Pixel difference threshold for detection
-SNAP_CHECK_DELAY = 0.08     # Delay before checking if piece snapped
+SNAP_CHECK_DELAY = 0.005     # Delay before checking if piece snapped
 
 # Color ranges (HSV) for theme detection
 # Board: light gray (low saturation, high value)

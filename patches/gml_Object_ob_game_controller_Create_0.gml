@@ -10,6 +10,7 @@ if (global.dev_tools_are_active == 1)
 {
     show_debug_overlay(1);
 }
+global.dev_autoresolve_active = 0;
 global.as_state = 0;
 global.as_timer = 0;
 global.as_pack = 1;
@@ -24,6 +25,14 @@ global.as_last_pack_name = "";
 global.as_last_pieces = 0;
 global.as_pack_done = 0;
 global.as_pack_total = 0;
+global.as_phase = 0;
+global.as_exit_timer = 0;
+global.as_cfg_exit_delay = 3;
+global.as_cfg_between_delay = 2;
+global.as_room_init_wait = 30;
+global.as_cur_puzzle_num = 0;
+global.as_last_puzzle_num = 0;
+global.as_pack_room = -1;
 if (global.dev_tools_are_active != 1)
 {
     var players = steam_get_stat_int("players") + 1;

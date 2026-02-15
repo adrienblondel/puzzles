@@ -1,75 +1,88 @@
-if (keyboard_check_pressed(vk_f9))
-{
-    with (ob_puzzle_pieces_actual)
-    {
-        if (CurrentState != 3)
-        {
-            CurrentState = 3;
-            x = socket_x_location;
-            y = socket_y_location;
-            image_angle = 0;
-            image_xscale = 1;
-            image_yscale = 1;
-            depth = -50;
-            speed = 0;
-            direction = 0;
-            Img_alpha = 1;
-        }
-    }
-    var PuzGrid = ds_grid_create(4, global.puzzle_max_number_of_pieces + 1);
-    var ClickedGrid = ds_grid_create(1, 500);
-    var savefile = "p" + string(global.current_pack_open) + ".ini";
-    ini_open(string(savefile));
-    var section = "P" + string(global.puzzle_number_to_play);
-    var grid_data = ini_read_string(section, "0", "");
-    if (grid_data != "")
-    {
-        ds_grid_read(PuzGrid, grid_data);
-    }
-    var Clicked_data = ini_read_string("PC", "0", "");
-    if (Clicked_data != "")
-    {
-        ds_grid_read(ClickedGrid, Clicked_data);
-    }
-    var already_saved = 0;
-    for (var i = 1; i <= global.puzzle_max_number_of_pieces; i++)
-    {
-        if (ds_grid_get(PuzGrid, 0, i) == 1)
-        {
-            already_saved += 1;
-        }
-        ds_grid_set(PuzGrid, 0, i, 1);
-        ds_grid_set(PuzGrid, 1, i, 0);
-    }
-    ini_write_string(string(section), "0", ds_grid_write(PuzGrid));
-    ds_grid_set(ClickedGrid, 0, global.puzzle_number_to_play, global.puzzle_max_number_of_pieces);
-    ini_write_string("PC", "0", ds_grid_write(ClickedGrid));
-    ds_grid_destroy(PuzGrid);
-    ds_grid_destroy(ClickedGrid);
+// --- Mode auto-resolve humain (F9 toggle) ---
+// Place les pièces une par une via les objets du jeu (comme un humain)
+if (!variable_global_exists("dev_autoresolve_active")) global.dev_autoresolve_active = 0;
+if (!variable_global_exists("dev_autoresolve_timer")) global.dev_autoresolve_timer = 0;
+if (!variable_global_exists("dev_autoresolve_delay")) {
+    global.dev_autoresolve_delay = 1;
+}
+if (!variable_global_exists("dev_autoresolve_delay_loaded")) {
+    ini_open("autosolve.ini");
+    global.dev_autoresolve_delay = ini_read_real("dev", "step_delay", 1);
     ini_close();
-    global.total_number_of_pieces = 0;
-    var newly_saved = global.puzzle_max_number_of_pieces - already_saved;
-    if (steam_stats_ready() && newly_saved > 0)
-    {
-        var new_pieces_placed = steam_get_stat_int("pieces_placed") + newly_saved;
-        steam_set_stat_int("pieces_placed", new_pieces_placed);
-        steam_upload_score("pieces_placed_in", new_pieces_placed);
-    }
-    // Sync with F10 auto-solve overlay if active
-    if (global.as_state > 0 && global.as_pi_grid != -1)
-    {
-        // F9 just solved this puzzle manually — update overlay counters
-        // F10 will auto-skip it next tick via steam_get_achievement check
-        if (global.as_total > 0)
-        {
-            global.as_total -= 1;
+    global.dev_autoresolve_delay_loaded = 1;
+}
+if (keyboard_check_pressed(vk_f9)) {
+    global.dev_autoresolve_active = 1 - global.dev_autoresolve_active;
+    global.dev_autoresolve_timer = 0;
+}
+// Stopper si le puzzle est terminé
+if (global.dev_autoresolve_active && puzzle_is_over == 1) {
+    global.dev_autoresolve_active = 0;
+}
+if (global.dev_autoresolve_active && puzzle_is_over == 0) {
+    global.dev_autoresolve_timer -= 1/room_speed;
+    if (global.dev_autoresolve_timer <= 0) {
+        // Compter les pièces non placées
+        var unplaced_count = 0;
+        with (ob_puzzle_pieces_actual) {
+            if (CurrentState != 3) unplaced_count += 1;
         }
-        global.as_total_already += 1;
-        if (global.current_pack_open >= 1 && global.current_pack_open <= global.TotalPacks)
-        {
-            global.as_last_pack_name = ds_grid_get(global.as_pi_grid, 1, global.current_pack_open);
+        if (unplaced_count > 0) {
+            // Choisir une pièce au hasard parmi les non placées
+            var target = irandom(unplaced_count - 1);
+            var idx = 0;
+            var found = 0;
+            with (ob_puzzle_pieces_actual) {
+                if (!found && CurrentState != 3) {
+                    if (idx == target) {
+                        // Placer la pièce
+                        CurrentState = 3;
+                        x = socket_x_location;
+                        y = socket_y_location;
+                        image_angle = 0;
+                        piece_is_clicked_in = 1;
+                        global.total_number_of_pieces -= 1;
+                        global.can_pick_a_bit_up = 1;
+                        audio_play_sound(s_piece_click_in, 1, false);
+
+                        // Sauvegarder PuzGrid + ClickedGrid dans le fichier INI
+                        var PuzGrid = ds_grid_create(4, global.puzzle_max_number_of_pieces + 1);
+                        var ClickedGrid = ds_grid_create(1, 500);
+                        var savefile = "p" + string(global.current_pack_open) + ".ini";
+                        ini_open(string(savefile));
+                        var section = "P" + string(global.puzzle_number_to_play);
+                        var grid_data = ini_read_string(section, "0", "");
+                        if (grid_data != "") { ds_grid_read(PuzGrid, grid_data); }
+                        ds_grid_set(PuzGrid, 0, puzzle_piece_number, 1);
+                        ds_grid_set(PuzGrid, 1, puzzle_piece_number, 0);
+                        ini_write_string(string(section), "0", ds_grid_write(PuzGrid));
+                        // Mettre à jour le compteur affiché sur les thumbnails
+                        var Clicked_data = ini_read_string("PC", "0", "");
+                        if (Clicked_data != "") { ds_grid_read(ClickedGrid, Clicked_data); }
+                        var placed_count = global.puzzle_max_number_of_pieces - global.total_number_of_pieces;
+                        ds_grid_set(ClickedGrid, 0, global.puzzle_number_to_play, placed_count);
+                        ini_write_string("PC", "0", ds_grid_write(ClickedGrid));
+                        ds_grid_destroy(PuzGrid);
+                        ds_grid_destroy(ClickedGrid);
+                        ini_close();
+
+                        // Mettre à jour les stats Steam
+                        if (steam_stats_ready()) {
+                            var new_pp = steam_get_stat_int("pieces_placed") + 1;
+                            steam_set_stat_int("pieces_placed", new_pp);
+                            steam_upload_score("pieces_placed_in", new_pp);
+                        }
+
+                        found = 1;
+                    }
+                    idx += 1;
+                }
+            }
+        } else {
+            // Plus de pièces, arrêter
+            global.dev_autoresolve_active = 0;
         }
-        global.as_last_pieces = global.puzzle_max_number_of_pieces;
+        global.dev_autoresolve_timer = global.dev_autoresolve_delay;
     }
 }
 if (preview_hint > 0)
@@ -1398,6 +1411,13 @@ if (ExitPuzzle == 1)
         }
         global.a_menu_overlay_is_showing = 0;
         global.camera_is_zoomed_in = 0;
-        room_goto(r_menu_3);
+        if (global.as_state > 0)
+        {
+            room_goto(global.as_pack_room);
+        }
+        else
+        {
+            room_goto(r_menu_3);
+        }
     }
 }
