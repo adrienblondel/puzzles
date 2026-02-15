@@ -11,9 +11,11 @@ if (global.dev_tools_are_active == 1)
     show_debug_overlay(1);
 }
 global.dev_autoresolve_active = 0;
+global.dev_autoresolve_timer = 0;
+global.dev_autoresolve_delay = 1;
 global.as_state = 0;
 global.as_timer = 0;
-global.as_pack = 1;
+global.as_pack = 0;
 global.as_puzzle = 1;
 global.as_count = 0;
 global.as_total = 0;
@@ -29,7 +31,9 @@ global.as_phase = 0;
 global.as_exit_timer = 0;
 global.as_cfg_exit_delay = 3;
 global.as_cfg_between_delay = 2;
-global.as_room_init_wait = 30;
+global.as_cfg_overlay_show = 1;
+global.as_cfg_overlay_opacity = 0.7;
+global.as_room_init_wait = 0;
 global.as_cur_puzzle_num = 0;
 global.as_last_puzzle_num = 0;
 global.as_pack_room = -1;

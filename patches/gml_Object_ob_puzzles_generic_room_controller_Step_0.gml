@@ -1,20 +1,4 @@
-// --- Mode auto-resolve humain (F9 toggle) ---
-// Place les pièces une par une via les objets du jeu (comme un humain)
-if (!variable_global_exists("dev_autoresolve_active")) global.dev_autoresolve_active = 0;
-if (!variable_global_exists("dev_autoresolve_timer")) global.dev_autoresolve_timer = 0;
-if (!variable_global_exists("dev_autoresolve_delay")) {
-    global.dev_autoresolve_delay = 1;
-}
-if (!variable_global_exists("dev_autoresolve_delay_loaded")) {
-    ini_open("autosolve.ini");
-    global.dev_autoresolve_delay = ini_read_real("dev", "step_delay", 1);
-    ini_close();
-    global.dev_autoresolve_delay_loaded = 1;
-}
-if (keyboard_check_pressed(vk_f9)) {
-    global.dev_autoresolve_active = 1 - global.dev_autoresolve_active;
-    global.dev_autoresolve_timer = 0;
-}
+// --- Mode auto-resolve (controlled by F10 via ob_game_controller) ---
 // Stopper si le puzzle est terminé
 if (global.dev_autoresolve_active && puzzle_is_over == 1) {
     global.dev_autoresolve_active = 0;

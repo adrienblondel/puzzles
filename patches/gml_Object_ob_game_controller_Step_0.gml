@@ -159,33 +159,29 @@ if (keyboard_check_pressed(vk_f10))
 
     if (global.as_state == 0)
     {
-        // In puzzle room: toggle F9 auto-resolve (single puzzle mode)
+        // Load common config
+        ini_open("autosolve.ini");
+        global.as_cfg_overlay_opacity = ini_read_real("overlay", "opacity", 0.7);
+        global.as_cfg_overlay_show = ini_read_real("overlay", "show", 1);
+        global.as_cfg_exit_delay = ini_read_real("pack_solve", "exit_delay_sec", 3);
+        global.as_cfg_between_delay = ini_read_real("pack_solve", "between_puzzles_sec", 2);
+        global.dev_autoresolve_delay = ini_read_real("dev", "step_delay", 1);
+        ini_close();
+        show_debug_message("Auto-solve: config loaded. step_delay=" + string(global.dev_autoresolve_delay));
+
+        // In puzzle room: single puzzle auto-solve
         if (instance_exists(ob_puzzles_generic_room_controller))
         {
-            if (global.dev_autoresolve_active == 0)
-            {
-                global.dev_autoresolve_active = 1;
-                global.dev_autoresolve_timer = 0;
-                show_debug_message("F10: single puzzle auto-resolve ON");
-            }
-            else
-            {
-                global.dev_autoresolve_active = 0;
-                show_debug_message("F10: single puzzle auto-resolve OFF");
-            }
+            global.dev_autoresolve_active = 1;
+            global.dev_autoresolve_timer = 0;
+            global.as_state = 1;
+            global.as_phase = 1;
+            global.as_pack = 0;
+            global.as_cur_puzzle_num = global.puzzle_number_to_play;
+            show_debug_message("F10: single puzzle auto-solve ON");
         }
         else if (detected_pack > 0)
         {
-            // Load config
-            ini_open("autosolve.ini");
-            global.as_cfg_overlay_x = ini_read_real("overlay", "x", 200);
-            global.as_cfg_overlay_opacity = ini_read_real("overlay", "opacity", 0.7);
-            global.as_cfg_overlay_show = ini_read_real("overlay", "show", 1);
-            global.as_cfg_exit_delay = ini_read_real("pack_solve", "exit_delay_sec", 3);
-            global.as_cfg_between_delay = ini_read_real("pack_solve", "between_puzzles_sec", 2);
-            ini_close();
-            show_debug_message("Auto-solve: config loaded. exit_delay=" + string(global.as_cfg_exit_delay) + " between_delay=" + string(global.as_cfg_between_delay));
-
             // Load PI_G to get pack info
             var pack_id = detected_pack;
             ini_open("pidsg.ini");
@@ -270,26 +266,49 @@ if (keyboard_check_pressed(vk_f10))
     }
     else if (global.as_state == 1)
     {
-        global.as_state = 2;
-        if (global.dev_autoresolve_active == 1)
+        if (global.as_phase == 4)
         {
+            // Completed state: dismiss overlay
+            global.as_state = 0;
+            global.as_phase = 0;
             global.dev_autoresolve_active = 0;
+            if (global.as_pi_grid != -1)
+            {
+                ds_grid_destroy(global.as_pi_grid);
+                global.as_pi_grid = -1;
+            }
+            show_debug_message("Auto-solve: dismissed completed overlay");
         }
-        show_debug_message("Auto-solve PAUSED");
+        else
+        {
+            global.as_state = 2;
+            if (global.dev_autoresolve_active == 1)
+            {
+                global.dev_autoresolve_active = 0;
+            }
+            show_debug_message("Auto-solve PAUSED");
+        }
     }
     else if (global.as_state == 2)
     {
         global.as_state = 1;
+        // For single puzzle: re-enable auto-resolve immediately
+        if (global.as_pack == 0 && instance_exists(ob_puzzles_generic_room_controller))
+        {
+            global.dev_autoresolve_active = 1;
+            global.dev_autoresolve_timer = 0;
+        }
         show_debug_message("Auto-solve RESUMED");
     }
 }
 
-// F8: stop auto-solve completely
-if (keyboard_check_pressed(vk_f8) && global.as_state > 0)
+// F8: stop auto-solve completely (or dismiss completed overlay)
+if (keyboard_check_pressed(vk_f8) && (global.as_state > 0 || global.as_complete_flash > 0))
 {
-    show_debug_message("Auto-solve STOPPED by user. Solved " + string(global.as_count) + "/" + string(global.as_total) + " puzzles.");
+    show_debug_message("Auto-solve STOPPED by user.");
     global.as_state = 0;
     global.as_phase = 0;
+    global.as_complete_flash = 0;
     if (global.dev_autoresolve_active == 1)
     {
         global.dev_autoresolve_active = 0;
@@ -478,31 +497,31 @@ if (global.as_state == 1)
                     global.as_cur_puzzle_num = puz;
                     show_debug_message("Auto-solve: ENTERING puzzle #" + string(puz) + " (" + string(pieces) + " pieces, level_type=" + string(global.level_type) + ")");
                     global.as_phase = 1;
-                    global.as_room_init_wait = 30;
+                    global.as_room_init_wait = 180;
                     room_goto(asset_get_index("r_puzzle_room"));
                 }
             }
             else
             {
-                // Pack complete!
-                show_debug_message("Auto-solve COMPLETE! Pack " + string(global.as_cur_pack_name) + " done. Solved " + string(global.as_count) + " puzzles.");
-                global.as_state = 0;
-                global.as_phase = 0;
+                // Pack complete! Keep overlay open with phase 4
+                global.as_pack_done = global.as_pack_total;
+                global.as_phase = 4;
                 if (global.as_pi_grid != -1)
                 {
                     ds_grid_destroy(global.as_pi_grid);
                     global.as_pi_grid = -1;
                 }
+                show_debug_message("Auto-solve COMPLETE! Pack " + string(global.as_cur_pack_name) + " done. Solved " + string(global.as_count) + " puzzles.");
             }
         }
     }
 
-    // Phase 1: In puzzle room, ensure F9 solving is active
+    // Phase 1: In puzzle room, solving
     if (global.as_phase == 1 && room == asset_get_index("r_puzzle_room"))
     {
-        if (global.dev_autoresolve_active == 0)
+        // Pack mode: wait for room init then activate auto-resolve
+        if (global.as_pack > 0 && global.dev_autoresolve_active == 0)
         {
-            // Wait a short moment for room to fully initialize
             if (global.as_room_init_wait > 0)
             {
                 global.as_room_init_wait -= 1;
@@ -511,8 +530,8 @@ if (global.as_state == 1)
             {
                 global.dev_autoresolve_active = 1;
                 global.dev_autoresolve_timer = 0;
-                global.as_room_init_wait = 30;
-                show_debug_message("Auto-solve: activated F9 auto-resolve in puzzle room");
+                global.as_room_init_wait = 5;
+                show_debug_message("Auto-solve: activated auto-resolve in puzzle room");
             }
         }
 
@@ -521,11 +540,30 @@ if (global.as_state == 1)
         {
             if (ob_puzzles_generic_room_controller.puzzle_is_over == 1)
             {
-                global.as_phase = 2;
-                global.as_exit_timer = round(global.as_cfg_exit_delay * 60);
-                show_debug_message("Auto-solve: puzzle #" + string(global.as_puzzle) + " COMPLETED, waiting " + string(global.as_cfg_exit_delay) + "s before exit");
+                if (global.as_pack > 0)
+                {
+                    // Pack mode: wait then exit puzzle
+                    global.as_phase = 2;
+                    global.as_exit_timer = round(global.as_cfg_exit_delay * 60);
+                    show_debug_message("Auto-solve: puzzle #" + string(global.as_puzzle) + " COMPLETED, waiting " + string(global.as_cfg_exit_delay) + "s before exit");
+                }
+                else
+                {
+                    // Single puzzle: show completed state
+                    global.as_phase = 4;
+                    show_debug_message("Auto-solve: single puzzle COMPLETED");
+                }
             }
         }
+    }
+
+    // Single puzzle: cleanup if user left the puzzle room
+    if (global.as_pack == 0 && global.as_phase != 4 && room != asset_get_index("r_puzzle_room"))
+    {
+        global.as_state = 0;
+        global.as_phase = 0;
+        global.dev_autoresolve_active = 0;
+        show_debug_message("Auto-solve: single puzzle mode cleaned up (left puzzle room)");
     }
 
     // Phase 2: Puzzle done, wait before triggering exit
