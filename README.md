@@ -1,6 +1,6 @@
 # Pixel Puzzles Ultimate - Auto-Solve Mod
 
-Mod pour le jeu Steam **Pixel Puzzles Ultimate** qui permet de résoudre instantanément n'importe quel puzzle avec **F9**, ou de résoudre automatiquement tous les puzzles incomplets avec **F10**.
+Mod pour le jeu Steam **Pixel Puzzles Ultimate** qui résout automatiquement les puzzles. **F10** gère tout : puzzle simple ou pack entier.
 
 ## Installation
 
@@ -43,23 +43,41 @@ utmt/UndertaleModCli.exe replace \
 
 ## Utilisation
 
-1. Lancer le jeu via Steam (normalement)
-2. Ouvrir un puzzle
-3. Appuyer sur **F9** → toutes les pièces se placent instantanément
-4. Le puzzle est marqué comme complété (achievement Steam, progression sauvegardée)
-5. On peut re-appuyer sur **F9** sur un puzzle déjà complété pour rafraîchir les compteurs
+### Touches
 
-### F10 — Auto-Solve All (résoudre tous les puzzles)
+| Touche | Contexte | Action |
+|--------|----------|--------|
+| **F10** | Dans un puzzle | Lance l'auto-solve du puzzle en cours |
+| **F10** | Sur la page d'un pack | Lance l'auto-solve de tous les puzzles incomplets du pack |
+| **F10** | Pendant l'auto-solve | Met en **pause** / **reprend** |
+| **F10** | Auto-solve terminé | Ferme l'overlay |
+| **F8** | À tout moment | **Arrête** l'auto-solve / ferme l'overlay |
 
-1. Appuyer sur **F10** n'importe où (menu ou puzzle) → lance le mode auto-solve
-2. Un overlay en bas à gauche affiche la progression :
-   - Barre de progression globale et par pack
-   - Timer avant le prochain solve
+### Puzzle simple
+
+1. Ouvrir un puzzle
+2. Appuyer sur **F10** → les pièces se placent une par une (avec le son original)
+3. L'overlay en bas à gauche affiche la progression (pièces placées / total)
+4. Une fois terminé, l'overlay reste ouvert avec "PUZZLE COMPLETE"
+5. **F10** ou **F8** pour fermer
+
+### Pack entier
+
+1. Ouvrir la page d'un pack (là où on voit les vignettes des puzzles)
+2. Appuyer sur **F10** → le mod entre dans chaque puzzle incomplet et le résout
+3. L'overlay affiche :
+   - Barre de progression du pack (puzzles résolus / total)
+   - Barre de progression du puzzle en cours (pièces placées / total)
    - Dernier puzzle résolu
-3. **F10** à nouveau → met en **pause** / **reprend**
-4. Les puzzles sont résolus un par un avec un délai réaliste (configurable, 30-60 min par défaut)
-5. Timer initial configurable (5 minutes par défaut)
-6. Compatible avec F9 : résoudre un puzzle manuellement met à jour la progression F10
+   - Timers (prochain puzzle, retour au pack)
+4. **F10** pour pause/reprise, **F8** pour arrêter
+5. Si le pack est déjà complet, un flash "PACK COMPLETE" s'affiche brièvement
+
+### Délais
+
+- **3 secondes** à l'entrée d'un puzzle (temps de l'animation in-game)
+- **Délai entre chaque pièce** configurable via `step_delay` dans `autosolve.ini`
+- **Délai entre puzzles** et **délai de sortie** configurables
 
 ### Dev tools (bonus)
 
@@ -67,43 +85,30 @@ Le mod active aussi les outils de développement cachés du jeu :
 - **Touche 9** (en tenant une pièce) : snap instantané la pièce tenue
 - **Touche 0 + clic gauche** : snap la pièce sous le curseur
 
+## Configuration (`autosolve.ini`)
+
+Copier `autosolve.ini` dans le dossier du jeu. Le fichier est relu à chaque appui sur F10.
+
+| Section | Clé | Défaut | Description |
+|---------|-----|--------|-------------|
+| `dev` | `step_delay` | `1` | Délai entre chaque pièce posée (en secondes). Ex: `0.1` = très rapide |
+| `pack_solve` | `exit_delay_sec` | `3` | Délai après complétion d'un puzzle avant retour au pack (secondes) |
+| `pack_solve` | `between_puzzles_sec` | `2` | Délai sur la page du pack avant d'entrer dans le puzzle suivant (secondes) |
+| `overlay` | `opacity` | `0.7` | Opacité du fond de l'overlay (0.0–1.0) |
+| `overlay` | `show` | `1` | Afficher l'overlay (1=oui, 0=non). Le solve continue même si masqué |
+
 ## Ce que le mod fait
 
 Le patch modifie 4 scripts GML dans `data.win` :
 
 1. **`ob_game_controller_Create_0`** : active les dev tools + initialise les variables auto-solve
-2. **`ob_game_controller_Step_0`** : logique F10 (queue, timer, solve, pause/resume)
-3. **`ob_game_controller_Draw_64`** : overlay de progression auto-solve
-4. **`ob_puzzles_generic_room_controller_Step_0`** : F9 instant-solve + sync avec F10
+2. **`ob_game_controller_Step_0`** : logique F10/F8 (single puzzle, pack, pause/resume, config)
+3. **`ob_game_controller_Draw_64`** : overlay de progression unifié (single, pack, completed)
+4. **`ob_puzzles_generic_room_controller_Step_0`** : placement des pièces une par une (contrôlé par F10)
 
-### F9 (instant-solve)
-- Snap toutes les pièces à leur position cible
-- Sauvegarde le PuzGrid (état des pièces) dans le fichier INI
-- Met à jour le ClickedGrid (compteur de pièces placées affiché sur les vignettes)
-- Met à jour les stats Steam (`pieces_placed`)
-- Déclenche la logique de complétion du jeu (achievement, gold, etc.)
+### Détection des puzzles incomplets
 
-### F10 (auto-solve-all)
-- Lit les données de tous les packs depuis `pidsg.ini`
-- Itère les 175 packs, identifie les puzzles non complétés
-- Résout chaque puzzle en écrivant les INI + achievements Steam
-- Délai réaliste entre chaque solve (configurable via `autosolve.ini`)
-- Met à jour les compteurs en mémoire pour les menus
-
-## Configuration (`autosolve.ini`)
-
-Copier `autosolve.ini` dans le dossier du jeu. Le fichier est lu à chaque appui sur F10.
-
-| Section | Clé | Défaut | Description |
-|---------|-----|--------|-------------|
-| `timing` | `initial_delay_min` | `5` | Délai initial avant le premier puzzle (minutes) |
-| `timing` | `min_delay_min` | `30` | Délai minimum entre deux puzzles (minutes) |
-| `timing` | `max_delay_min` | `60` | Délai maximum entre deux puzzles (minutes) |
-| `timing` | `variation_min` | `5` | Variation aléatoire ± sur chaque délai (minutes) |
-| `overlay` | `x` | `200` | Position horizontale de l'overlay (pixels, GUI 1920×1080) |
-| `overlay` | `opacity` | `0.7` | Opacité du fond (0.0–1.0) |
-| `overlay` | `show` | `1` | Afficher l'overlay (1=oui, 0=non) |
-| `solve` | `skip_packs` | *(vide)* | Numéros de packs à ignorer, séparés par des virgules (ex: `3,7,12`) |
+Le mod vérifie l'état de chaque puzzle en lisant le comptage de pièces dans les fichiers INI de sauvegarde (`p{pack}.ini`), et non les achievements Steam. Cela évite les faux positifs quand un achievement est resté actif après un reset de progression.
 
 ## Désinstallation
 
@@ -127,14 +132,6 @@ puzzles/
 ├── utmt/                  # UndertaleModTool CLI (patcher GameMaker)
 ├── gml_dump/              # Dump complet du code GML du jeu (392 fichiers)
 └── python_legacy/         # Anciens scripts Python (solveur par vision, non maintenu)
-    ├── puzzle_solver.py   # Moteur principal (~1100 lignes, OpenCV)
-    ├── run_solver.py      # Lanceur CLI
-    ├── script1.ahk        # Ancien script AutoHotkey
-    ├── memory_reader.py   # POC lecture mémoire avec pymem
-    ├── dump_gamedata.py   # Parser du format data.win (IFF/FORM)
-    ├── decompile_gml.py   # Désassembleur GML (expérimental)
-    ├── requirements.txt   # Dépendances Python (pymem, opencv, etc.)
-    └── TECHSTACK.md       # Bilan technique de l'approche Python
 ```
 
 ## Notes techniques
@@ -142,4 +139,7 @@ puzzles/
 - Le jeu utilise **GameMaker Studio** (pas Unity)
 - Le fichier `data.win` contient tout le code, sprites et données du jeu au format IFF/FORM
 - Les positions des pièces sont hardcodées par puzzle dans `Alarm_3`
+- `ob_game_controller` est un objet **persistant** (présent dans toutes les rooms)
+- `ob_puzzles_generic_room_controller` n'existe que dans la room `r_puzzle_room`
+- Les noms de ressources non référencés dans le code original doivent utiliser `asset_get_index()` (limitation UTMT)
 - Voir `analysis.md` pour l'analyse complète de la logique du jeu
