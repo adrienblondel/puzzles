@@ -1,2 +1,0 @@
-challenge_button_title = ob_language_controller.main_menu_button_4;
-challenge_end_word = ob_language_controller.main_menu_button_4a;

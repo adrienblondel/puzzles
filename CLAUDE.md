@@ -1,40 +1,57 @@
-# Pixel Puzzles Ultimate - Auto Solver
+# Pixel Puzzles Ultimate - Auto-Solve Mod
 
 ## Projet
-Solveur automatique pour le jeu Steam "Pixel Puzzles Ultimate" (jeu de puzzle/jigsaw).
-Automatisation desktop par vision (pas du web scraping).
+Mod GML pour le jeu Steam "Pixel Puzzles Ultimate" qui résout automatiquement les puzzles.
+Approche : patch du fichier `data.win` (GameMaker Studio) via UndertaleModTool CLI.
 
 ## Architecture
-- `puzzle_solver.py` — moteur principal (classe `PuzzleSolver`, ~1100 lignes)
-- `run_solver.py` — lanceur CLI avec parsing d'arguments
-- `script1.ahk` — ancien script AutoHotkey (legacy, non maintenu)
-- `requirements.txt` — dépendances Python
+- `patches/` — 4 fichiers GML qui constituent le mod
+  - `gml_Object_ob_game_controller_Create_0.gml` — init variables + dev tools
+  - `gml_Object_ob_game_controller_Step_0.gml` — logique F10 auto-solve + F11 stop
+  - `gml_Object_ob_game_controller_Draw_64.gml` — overlay de progression
+  - `gml_Object_ob_puzzles_generic_room_controller_Step_0.gml` — F9 instant-solve + sync F10
+- `autosolve.ini` — configuration des timings et overlay (copié dans le dossier du jeu)
+- `utmt/` — UndertaleModTool CLI (patcher GameMaker)
+- `gml_dump/` — dump complet du code GML du jeu (392 fichiers, référence)
+- `analysis.md` — analyse technique de la logique du jeu
+- `python_legacy/` — ancien solveur par vision OpenCV (non maintenu)
 
 ## Stack technique
-- **Python 3** avec OpenCV, numpy, mss, pyautogui, pydirectinput
-- **pytesseract** (optionnel) pour OCR du compteur de pièces
-- Voir `TECHSTACK.md` pour le bilan complet
-
-## Fonctionnement
-1. Détecte la fenêtre du jeu (pygetwindow + Win32 API)
-2. Capture l'écran (mss) et analyse par vision (OpenCV HSV + contours)
-3. Localise le plateau et les pièces dans la bordure
-4. Drag & drop systématique de chaque pièce sur chaque case de la grille
-5. Vérifie le placement par comparaison de pixels
+- **GameMaker Language (GML)** — langage du jeu, patches injectés dans `data.win`
+- **UndertaleModTool CLI** — outil de patching des fichiers GameMaker
+- **Steam API** — achievements, stats, DLC ownership (`steam_set_achievement`, `steam_user_owns_dlc`, etc.)
+- **INI files** — sauvegardes du jeu (`pidsg.ini`, `p{N}.ini`, `settings.ini`) + config mod (`autosolve.ini`)
 
 ## Conventions
-- Langue du code : anglais
+- Langue du code GML : anglais
 - Langue des commentaires/docs utilisateur : français
-- Les tailles de grille connues sont dans le dict `PUZZLE_GRIDS`
-- Le mode debug (`--debug`) sauvegarde les screenshots dans `./debug/`
+- Variables globales auto-solve préfixées `global.as_`
+- Config variables préfixées `global.as_cfg_`
 
 ## Commandes utiles
 ```bash
-pip install -r requirements.txt
-python run_solver.py                # Mode interactif
-python run_solver.py --pieces 330   # Taille connue
-python run_solver.py --debug        # Screenshots de debug
+# Appliquer le patch (depuis la racine du projet)
+utmt/UndertaleModCli.exe replace \
+  "C:\Program Files (x86)\Steam\steamapps\common\Pixel Puzzles Ultimate\data.win.backup" \
+  -o "C:\Program Files (x86)\Steam\steamapps\common\Pixel Puzzles Ultimate\data.win" \
+  -c "gml_Object_ob_game_controller_Create_0=patches/gml_Object_ob_game_controller_Create_0.gml" \
+  -c "gml_Object_ob_game_controller_Step_0=patches/gml_Object_ob_game_controller_Step_0.gml" \
+  -c "gml_Object_ob_game_controller_Draw_64=patches/gml_Object_ob_game_controller_Draw_64.gml" \
+  -c "gml_Object_ob_puzzles_generic_room_controller_Step_0=patches/gml_Object_ob_puzzles_generic_room_controller_Step_0.gml"
+
+# Copier la config dans le dossier du jeu
+cp autosolve.ini "C:\Program Files (x86)\Steam\steamapps\common\Pixel Puzzles Ultimate\"
 ```
 
-## Dépendances externes
-- Tesseract OCR doit être dans le PATH pour l'OCR (`C:\Program Files\Tesseract-OCR`)
+## Touches
+- **F9** (dans un puzzle) — résolution instantanée du puzzle ouvert
+- **F10** (partout) — démarrer/pause/reprendre l'auto-solve de tous les puzzles
+- **F11** (partout) — arrêter complètement l'auto-solve
+
+## Notes techniques
+- Le jeu utilise **GameMaker Studio** (pas Unity)
+- `data.win` contient tout le code, sprites et données au format IFF/FORM
+- `ob_game_controller` est un objet persistant (présent dans toutes les rooms)
+- PI_G grid dans `pidsg.ini` : col 0=DLC appID, col 1=nom, col 2=nb puzzles, cols 11+=nb pièces par puzzle
+- Ownership check via `steam_user_owns_dlc()` pour filtrer les packs non possédés
+- Positions des pièces hardcodées par puzzle dans `Alarm_3`

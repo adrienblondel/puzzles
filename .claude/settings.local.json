@@ -14,7 +14,13 @@
       "Bash(/c/git/puzzles/memory_poc/utmt/UndertaleModCli.exe --help)",
       "Bash(/c/git/puzzles/memory_poc/utmt/UndertaleModCli.exe:*)",
       "Bash(grep:*)",
-      "Bash(\"c:/git/puzzles/memory_poc/utmt/UndertaleModCli.exe\" replace \"data.win.backup\" -o \"data.win\" -c \"gml_Object_ob_game_controller_Create_0=c:/git/puzzles/memory_poc/patches/gml_Object_ob_game_controller_Create_0.gml\" -c \"gml_Object_ob_puzzles_generic_room_controller_Step_0=c:/git/puzzles/memory_poc/patches/gml_Object_ob_puzzles_generic_room_controller_Step_0.gml\")"
+      "Bash(\"c:/git/puzzles/memory_poc/utmt/UndertaleModCli.exe\" replace \"data.win.backup\" -o \"data.win\" -c \"gml_Object_ob_game_controller_Create_0=c:/git/puzzles/memory_poc/patches/gml_Object_ob_game_controller_Create_0.gml\" -c \"gml_Object_ob_puzzles_generic_room_controller_Step_0=c:/git/puzzles/memory_poc/patches/gml_Object_ob_puzzles_generic_room_controller_Step_0.gml\")",
+      "Bash(utmt/UndertaleModCli.exe replace:*)",
+      "Bash(utmt/UndertaleModCli.exe:*)",
+      "Bash(wc:*)",
+      "Bash(/tmp/innosetup.exe:*)",
+      "Bash(\"/c/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" /O\"/c/git/puzzles/Output\" \"/c/git/puzzles/installer.iss\")",
+      "Bash(\"/c/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" installer.iss)"
     ]
   }
 }

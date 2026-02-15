@@ -35,3 +35,9 @@ debug/
 
 # Archives (UTMT zip déjà extrait)
 *.zip
+
+# Inno Setup output
+Output/
+
+# GML dump (reverse engineering, volumineux)
+gml_dump/

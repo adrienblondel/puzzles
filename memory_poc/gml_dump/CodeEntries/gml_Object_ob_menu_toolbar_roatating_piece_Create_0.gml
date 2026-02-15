@@ -1,9 +1,0 @@
-image_alpha = 0;
-x = 297;
-y = 270;
-direction = 0;
-speed = 1;
-has_faded_in = 0;
-image_xscale = choose(-1, 1);
-image_speed = 0;
-image_index = choose(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);

@@ -1,1 +1,0 @@
-add_a_fav_text = ob_language_controller.main_menu_filter_9;

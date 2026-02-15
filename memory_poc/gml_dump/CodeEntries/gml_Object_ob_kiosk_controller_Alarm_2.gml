@@ -1,4 +1,0 @@
-kiosk_first_launch_info_a = ob_language_controller.kiosk_first_launch_info_a;
-kiosk_first_launch_info_b = ob_language_controller.kiosk_first_launch_info_b;
-kiosk_first_launch_info_c = ob_language_controller.kiosk_first_launch_info_c;
-kiosk_first_launch_info_d = ob_language_controller.kiosk_first_launch_info_d;
