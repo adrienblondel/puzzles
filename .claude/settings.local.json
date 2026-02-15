@@ -20,7 +20,9 @@
       "Bash(wc:*)",
       "Bash(/tmp/innosetup.exe:*)",
       "Bash(\"/c/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" /O\"/c/git/puzzles/Output\" \"/c/git/puzzles/installer.iss\")",
-      "Bash(\"/c/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" installer.iss)"
+      "Bash(\"/c/Program Files \\(x86\\)/Inno Setup 6/ISCC.exe\" installer.iss)",
+      "Bash(find:*)",
+      "Read(//c/Users/adrie/AppData/**)"
     ]
   }
 }
