@@ -202,13 +202,22 @@ if (keyboard_check_pressed(vk_f10))
                 var pack_name = ds_grid_get(global.as_pi_grid, 1, pack_id);
                 show_debug_message("Auto-solve: pack_name=" + string(pack_name) + " num_puzzles=" + string(num_puzzles));
 
-                // Count incomplete puzzles in this pack
+                // Load PC grid (piece counts) from save file
+                var pc_grid = ds_grid_create(1, 500);
+                var savefile = "p" + string(pack_id) + ".ini";
+                ini_open(string(savefile));
+                var pc_data = ini_read_string("PC", "0", "");
+                if (pc_data != "") { ds_grid_read(pc_grid, pc_data); }
+                ini_close();
+
+                // Count incomplete puzzles using piece counts from save
                 global.as_total = 0;
                 global.as_total_already = 0;
                 for (var q = 1; q <= num_puzzles; q++)
                 {
-                    var ach = "complete_pack_" + string(pack_id) + "_puzzle_" + string(q);
-                    if (steam_get_achievement(ach))
+                    var total_pieces = ds_grid_get(global.as_pi_grid, 10 + q, pack_id);
+                    var placed_pieces = ds_grid_get(pc_grid, 0, q);
+                    if (placed_pieces >= total_pieces && total_pieces > 0)
                     {
                         global.as_total_already += 1;
                     }
@@ -217,6 +226,7 @@ if (keyboard_check_pressed(vk_f10))
                         global.as_total += 1;
                     }
                 }
+                ds_grid_destroy(pc_grid);
                 show_debug_message("Auto-solve: total_to_do=" + string(global.as_total) + " already_done=" + string(global.as_total_already));
 
                 if (global.as_total > 0)
@@ -238,6 +248,11 @@ if (keyboard_check_pressed(vk_f10))
                 }
                 else
                 {
+                    // Pack already complete - show flash overlay
+                    global.as_cur_pack_name = pack_name;
+                    global.as_pack_total = num_puzzles;
+                    global.as_pack_done = num_puzzles;
+                    global.as_complete_flash = 180; // 3 seconds at 60fps
                     ds_grid_destroy(global.as_pi_grid);
                     global.as_pi_grid = -1;
                     show_debug_message("Auto-solve: pack already complete!");
@@ -298,22 +313,32 @@ if (global.as_state == 1)
         }
         else
         {
-            // Find next incomplete puzzle in this pack
+            // Find next incomplete puzzle in this pack (check piece counts from save)
             var pack_id = global.as_pack;
             var num_puzzles = ds_grid_get(global.as_pi_grid, 2, pack_id);
             var found = false;
 
+            // Load current piece counts
+            var pc_grid = ds_grid_create(1, 500);
+            var savefile = "p" + string(pack_id) + ".ini";
+            ini_open(string(savefile));
+            var pc_data = ini_read_string("PC", "0", "");
+            if (pc_data != "") { ds_grid_read(pc_grid, pc_data); }
+            ini_close();
+
             while (!found && global.as_puzzle <= num_puzzles)
             {
-                var ach_name = "complete_pack_" + string(pack_id) + "_puzzle_" + string(global.as_puzzle);
-                if (steam_get_achievement(ach_name))
+                var total_pieces = ds_grid_get(global.as_pi_grid, 10 + global.as_puzzle, pack_id);
+                var placed_pieces = ds_grid_get(pc_grid, 0, global.as_puzzle);
+                if (placed_pieces >= total_pieces && total_pieces > 0)
                 {
-                    show_debug_message("Auto-solve: puzzle #" + string(global.as_puzzle) + " already complete, skipping");
+                    show_debug_message("Auto-solve: puzzle #" + string(global.as_puzzle) + " already complete (" + string(placed_pieces) + "/" + string(total_pieces) + "), skipping");
                     global.as_puzzle += 1;
                     continue;
                 }
                 found = true;
             }
+            ds_grid_destroy(pc_grid);
 
             if (found)
             {
@@ -537,4 +562,10 @@ if (global.as_state == 1)
         global.as_timer = round(global.as_cfg_between_delay * 60);
         show_debug_message("Auto-solve: back on pack page. " + string(global.as_count) + "/" + string(global.as_total) + " done.");
     }
+}
+
+// Decrement complete flash timer
+if (global.as_complete_flash > 0)
+{
+    global.as_complete_flash -= 1;
 }

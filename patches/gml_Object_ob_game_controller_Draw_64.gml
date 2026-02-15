@@ -169,12 +169,71 @@ if (global.as_state > 0 && global.as_cfg_overlay_show == 1)
     draw_set_valign(fa_top);
 }
 
+// === PACK COMPLETE FLASH OVERLAY ===
+if (global.as_complete_flash > 0 && global.as_state == 0)
+{
+    var gui_w = display_get_gui_width();
+    var gui_h = display_get_gui_height();
+    var sc = gui_h / 1080;
+
+    var pad = round(16 * sc);
+    var line_h = round(24 * sc);
+    var bar_w = round(240 * sc);
+    var bar_h = round(14 * sc);
+    var bar_gap = round(8 * sc);
+    var section_gap = round(14 * sc);
+    var ow = round(420 * sc);
+    var oh = pad * 2 + line_h + section_gap + line_h + bar_gap + bar_h + section_gap + line_h;
+
+    var ox = round(10 * sc);
+    var oy = gui_h - oh - round(10 * sc);
+
+    // Fade out in last second
+    var flash_alpha = 1;
+    if (global.as_complete_flash < 60) { flash_alpha = global.as_complete_flash / 60; }
+
+    draw_set_alpha(0.7 * flash_alpha);
+    draw_set_colour(c_black);
+    draw_roundrect(ox, oy, ox + ow, oy + oh, false);
+    draw_set_alpha(flash_alpha);
+
+    draw_set_colour(make_colour_rgb(100, 255, 100));
+    draw_roundrect(ox, oy, ox + ow, oy + oh, true);
+
+    draw_set_font(f_main_20);
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    var tx = ox + pad;
+    var ty = oy + pad;
+
+    draw_set_colour(make_colour_rgb(100, 255, 100));
+    draw_text_transformed(tx, ty, "PACK COMPLETE", sc, sc, 0);
+    ty += line_h + section_gap;
+
+    draw_set_colour(make_colour_rgb(200, 200, 255));
+    draw_text_transformed(tx, ty, string(global.as_cur_pack_name), sc, sc, 0);
+    ty += line_h + bar_gap;
+
+    // Full progress bar
+    draw_set_colour(make_colour_rgb(80, 200, 80));
+    draw_rectangle(tx, ty, tx + bar_w, ty + bar_h, false);
+    draw_set_colour(c_white);
+    draw_text_transformed(tx + bar_w + round(10 * sc), ty, string(global.as_pack_total) + "/" + string(global.as_pack_total) + " (100%)", sc, sc, 0);
+    ty += bar_h + section_gap;
+
+    draw_set_colour(make_colour_rgb(120, 120, 120));
+    draw_text_transformed(tx, ty, "All puzzles already completed", sc * 0.85, sc * 0.85, 0);
+
+    draw_set_colour(c_white);
+    draw_set_alpha(1);
+}
+
 // === DEBUG OVERLAY (always visible, top-right) ===
 {
     var dg_w = display_get_gui_width();
     var dg_sc = display_get_gui_height() / 1080;
     var dg_lh = round(20 * dg_sc);
-    var dg_pad = round(4 * dg_sc);
+    var dg_pad = round(10 * dg_sc);
     var dg_box_w = round(420 * dg_sc);
     var dg_lines = 5;
 

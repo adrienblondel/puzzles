@@ -33,6 +33,7 @@ global.as_room_init_wait = 30;
 global.as_cur_puzzle_num = 0;
 global.as_last_puzzle_num = 0;
 global.as_pack_room = -1;
+global.as_complete_flash = 0;
 if (global.dev_tools_are_active != 1)
 {
     var players = steam_get_stat_int("players") + 1;
