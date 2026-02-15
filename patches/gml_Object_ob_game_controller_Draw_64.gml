@@ -218,14 +218,15 @@ if (show_overlay)
     draw_set_valign(fa_top);
 }
 
-// === DEBUG OVERLAY (always visible, top-right) ===
+// === DEBUG OVERLAY (top-right, dev tools only) ===
+if (global.as_cfg_debug_overlay == 1)
 {
     var dg_w = display_get_gui_width();
     var dg_sc = display_get_gui_height() / 1080;
     var dg_lh = round(20 * dg_sc);
     var dg_pad = round(10 * dg_sc);
     var dg_box_w = round(420 * dg_sc);
-    var dg_lines = 5;
+    var dg_lines = 6;
 
     draw_set_font(f_main_20);
     draw_set_halign(fa_right);
@@ -253,6 +254,8 @@ if (show_overlay)
     draw_text_transformed(dbg_x, dbg_y, "lvl=" + string(global.level_type) + " pcs=" + string(global.puzzle_max_number_of_pieces), dg_sc * 0.8, dg_sc * 0.8, 0);
     dbg_y += dg_lh;
     draw_text_transformed(dbg_x, dbg_y, "pack_open=" + string(global.current_pack_open), dg_sc * 0.8, dg_sc * 0.8, 0);
+    dbg_y += dg_lh;
+    draw_text_transformed(dbg_x, dbg_y, "delay=" + string(global.dev_autoresolve_delay) + " timer=" + string(global.dev_autoresolve_timer), dg_sc * 0.8, dg_sc * 0.8, 0);
     dbg_y += dg_lh;
     draw_set_colour(make_colour_rgb(180, 180, 180));
     draw_text_transformed(dbg_x, dbg_y, "F10=start/pause  F8=stop", dg_sc * 0.75, dg_sc * 0.75, 0);

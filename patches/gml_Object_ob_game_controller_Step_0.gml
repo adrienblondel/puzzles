@@ -166,6 +166,7 @@ if (keyboard_check_pressed(vk_f10))
         global.as_cfg_exit_delay = ini_read_real("pack_solve", "exit_delay_sec", 3);
         global.as_cfg_between_delay = ini_read_real("pack_solve", "between_puzzles_sec", 2);
         global.dev_autoresolve_delay = ini_read_real("dev", "step_delay", 1);
+        global.as_cfg_debug_overlay = ini_read_real("dev", "debug_overlay", 0);
         ini_close();
         show_debug_message("Auto-solve: config loaded. step_delay=" + string(global.dev_autoresolve_delay));
 

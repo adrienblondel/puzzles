@@ -33,6 +33,7 @@ global.as_cfg_exit_delay = 3;
 global.as_cfg_between_delay = 2;
 global.as_cfg_overlay_show = 1;
 global.as_cfg_overlay_opacity = 0.7;
+global.as_cfg_debug_overlay = 0;
 global.as_room_init_wait = 0;
 global.as_cur_puzzle_num = 0;
 global.as_last_puzzle_num = 0;
