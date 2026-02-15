@@ -1,0 +1,11 @@
+image_index = choose(0, 1, 2);
+image_speed = 0;
+speed = 1;
+direction = random_range(0, 180);
+gravity = random_range(0.01, 0.1);
+gravity_direction = 270;
+spin = choose(0, 1);
+spin_speed = random_range(0.1, 5);
+image_angle = random(360);
+image_xscale = random_range(0.5, 1);
+image_yscale = image_xscale;

@@ -1,0 +1,9 @@
+image_xscale = choose(0.6, 0.7, 0.8, 0.9, 1);
+image_yscale = image_xscale;
+image_speed = 0;
+image_angle = random(360);
+image_index = random(12);
+direction = random_range(70, 110);
+speed = random_range(8, 15);
+gravity = 0.1;
+gravity_direction = 270;

@@ -1,0 +1,11 @@
+alarm[0] = 1;
+sprite_index = sp_theme_zen_fish_water_residue;
+image_index = choose(0, 1, 2, 3, 4);
+image_angle = random(360);
+image_speed = 0;
+fade_out_speed = choose(0.016, 0.018, 0.02, 0.022, 0.024, 0.026);
+medium_size = choose(0.75, 0.8, 0.85, 0.9, 0.95, 1);
+fast_grow_speed = choose(0.029, 0.03, 0.031);
+slow_grow_speed = choose(0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007);
+image_xscale = choose(0.4, 0.45, 0.5, 0.55, 0.6);
+image_yscale = image_xscale;

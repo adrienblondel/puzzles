@@ -1,0 +1,11 @@
+text_for_theme_title = ob_language_controller.puzzle_select_option_9;
+text_for_theme_zen = ob_language_controller.puzzle_select_theme_1;
+text_for_theme_simple = ob_language_controller.puzzle_select_theme_2;
+text_for_theme_arcade = ob_language_controller.puzzle_select_theme_3;
+text_for_theme_window = ob_language_controller.puzzle_select_theme_4;
+text_for_theme_megacityone = ob_language_controller.puzzle_select_theme_5;
+text_for_theme_lines = ob_language_controller.puzzle_select_theme_6;
+text_for_theme_christmas = ob_language_controller.puzzle_select_theme_7;
+text_for_theme_rust = ob_language_controller.puzzle_select_theme_8;
+text_for_theme_table = ob_language_controller.puzzle_select_theme_9;
+text_for_theme_ruins = ob_language_controller.puzzle_select_theme_10;

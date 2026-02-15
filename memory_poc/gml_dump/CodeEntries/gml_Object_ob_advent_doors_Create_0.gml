@@ -1,0 +1,13 @@
+doorNUM = 0;
+image_speed = 0;
+sprite_index = sp_advent_door;
+puzHOV = 0;
+door_open = 2;
+alarm[0] = 2;
+OpenAnimation = 0;
+flipOpen = 1;
+image_alpha = 0;
+gold = 0;
+hints = 0;
+diamonds = 0;
+jigsaw = 0;

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(where:*)",
+      "Bash(python:*)",
+      "Bash(/c/Users/adrie/AppData/Local/Programs/Python/Python313/python.exe:*)",
+      "Bash(powershell.exe -Command:*)",
+      "Bash(ls:*)",
+      "Bash(strings:*)",
+      "Bash(dotnet:*)",
+      "Bash(gh release list:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(/c/git/puzzles/memory_poc/utmt/UndertaleModCli.exe --help)",
+      "Bash(/c/git/puzzles/memory_poc/utmt/UndertaleModCli.exe:*)",
+      "Bash(grep:*)",
+      "Bash(\"c:/git/puzzles/memory_poc/utmt/UndertaleModCli.exe\" replace \"data.win.backup\" -o \"data.win\" -c \"gml_Object_ob_game_controller_Create_0=c:/git/puzzles/memory_poc/patches/gml_Object_ob_game_controller_Create_0.gml\" -c \"gml_Object_ob_puzzles_generic_room_controller_Step_0=c:/git/puzzles/memory_poc/patches/gml_Object_ob_puzzles_generic_room_controller_Step_0.gml\")"
+    ]
+  }
+}

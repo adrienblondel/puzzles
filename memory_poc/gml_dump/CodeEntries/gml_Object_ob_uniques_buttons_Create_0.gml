@@ -1,0 +1,15 @@
+backing_image_blend = 0;
+colour_set_to_use = 0;
+title_to_display = 0;
+pack_sprite_index = 0;
+puzzle_image_index = 0;
+puzzle_number = 0;
+button_size = 0;
+puzzle_has_been_beat = 0;
+puzzle_level_type = 0;
+puzzle_number_of_pieces = 0;
+puzzle_number_of_pieces_placed = 0;
+mask_index = sp_kiosk_item_button;
+image_alpha = 0;
+alarm[0] = 1 + random(30);
+alarm[1] = 1;

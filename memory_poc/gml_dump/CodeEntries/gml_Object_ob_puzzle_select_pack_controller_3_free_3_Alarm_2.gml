@@ -1,0 +1,1 @@
+global.current_pack_open_title = ob_language_controller.text_pack_name_3;

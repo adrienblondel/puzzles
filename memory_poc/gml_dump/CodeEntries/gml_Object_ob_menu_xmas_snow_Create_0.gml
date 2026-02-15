@@ -1,0 +1,7 @@
+image_xscale = choose(0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1);
+image_yscale = image_xscale;
+image_speed = 0;
+image_angle = random(360);
+image_index = random(12);
+direction = 270;
+speed = choose(0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5);

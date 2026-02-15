@@ -1,0 +1,11 @@
+MaxPuzzles = 0;
+PuzzlesBeat = 0;
+VisiblePointY = 20;
+PackTitle = 0;
+pack_num = 0;
+hov = 0;
+pack_on_sale = 0;
+sale_percent = 0;
+appID = 0;
+button_alpha = 0;
+pack_beat = 0;

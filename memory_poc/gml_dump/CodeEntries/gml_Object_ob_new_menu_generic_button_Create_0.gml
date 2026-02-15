@@ -1,0 +1,15 @@
+image_speed = 0;
+puz_num = 0;
+pack_num = 0;
+can_search_for_puz = 0;
+can_go_to_level = 0;
+quick_puz_loaded = 0;
+button_scale = 1;
+button_text = "";
+button_text_value = "";
+hold_block = 0;
+alarm[0] = 1;
+sprite_index = sp_dummy_invisable_image;
+image_speed = 0;
+button_number = 0;
+p0x187p651 = 0;

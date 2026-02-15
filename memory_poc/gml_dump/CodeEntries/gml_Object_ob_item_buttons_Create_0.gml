@@ -1,0 +1,15 @@
+sprite_to_use = 54;
+VisiblePointY = 20;
+startY = 0;
+hov = 0;
+item_type = 0;
+item_num = 0;
+item_title = "";
+item_is_locked = 0;
+lockPrice = 0;
+buyMenu = 0;
+LockBuyHov = 0;
+buy_alpha = 0;
+buy_y = 40;
+cant_afford_alpha = 0;
+cant_afford2_alpha = 0;

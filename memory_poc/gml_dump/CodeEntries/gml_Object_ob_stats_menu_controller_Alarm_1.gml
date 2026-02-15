@@ -1,0 +1,1 @@
+challenge_fade_colour_to_use = ob_stuff_behind_menu_controller.stats_6_background_colour;

@@ -1,0 +1,14 @@
+image_index = irandom(7);
+image_speed = 0;
+direction = 85 + irandom(10);
+speed = irandom_range(10, 16);
+image_angle = direction;
+alarm[2] = irandom_range(10, 45);
+can_do_turning = 0;
+can_turn = choose(0, 1, 2);
+turn_speed = 0;
+turn_speed_target = irandom_range(1, 10);
+alarm[0] = 1;
+alarm[1] = irandom_range(30, 100);
+image_xscale = random_range(0.7, 1);
+image_yscale = image_xscale;

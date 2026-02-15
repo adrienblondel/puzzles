@@ -1,0 +1,14 @@
+backing_image_blend = 0;
+colour_set_to_use = 0;
+title_to_display = 0;
+pack_sprite_index = 0;
+puzzle_image_index = 0;
+button_size = 0;
+unique_category_button = 0;
+total_frames = 0;
+can_animate = 0;
+mask_index = sp_kiosk_item_button;
+image_alpha = 0;
+alarm[0] = 1 + random(30);
+alarm[1] = 1;
+alarm[3] = 1;
