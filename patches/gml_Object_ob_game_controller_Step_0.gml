@@ -88,17 +88,11 @@ if (keyboard_check_pressed(vk_f10))
         show_debug_message("  menu_return_to___pack_to_open=NOT SET");
 
     // Detect current pack from multiple sources
+    // Priority: visual sources first (what user sees), then persistent globals as fallback
     var detected_pack = 0;
 
-    // Source 1: global.current_pack_open (set when playing a puzzle)
-    if (global.current_pack_open > 0 && global.current_pack_open < 7000)
-    {
-        detected_pack = global.current_pack_open;
-        show_debug_message("  -> detected from current_pack_open: " + string(detected_pack));
-    }
-
-    // Source 2: new menu controller pack_to_open (viewing pack in new menu)
-    if (detected_pack == 0 && nm_obj >= 0 && instance_exists(nm_obj))
+    // Source 1: new menu controller pack_to_open (viewing pack in new menu)
+    if (nm_obj >= 0 && instance_exists(nm_obj))
     {
         var nm_inst = instance_find(nm_obj, 0);
         if (nm_inst.pack_to_open > 0)
@@ -108,24 +102,7 @@ if (keyboard_check_pressed(vk_f10))
         }
     }
 
-    // Source 3: menu_return_to___pack_to_open
-    if (detected_pack == 0 && variable_global_exists("menu_return_to___pack_to_open"))
-    {
-        if (global.menu_return_to___pack_to_open > 0)
-        {
-            detected_pack = global.menu_return_to___pack_to_open;
-            show_debug_message("  -> detected from menu_return_to___pack_to_open: " + string(detected_pack));
-        }
-    }
-
-    // Source 4: PackReturnPage (old menu system)
-    if (detected_pack == 0 && global.PackReturnPage > 0)
-    {
-        detected_pack = global.PackReturnPage;
-        show_debug_message("  -> detected from PackReturnPage: " + string(detected_pack));
-    }
-
-    // Source 5: Read pack_num from any puzzle button on the pack page
+    // Source 2: Read pack_num from any puzzle button on the pack page
     if (detected_pack == 0)
     {
         var mpb_obj = asset_get_index("ob_menu_puz_button");
@@ -140,7 +117,7 @@ if (keyboard_check_pressed(vk_f10))
         }
     }
 
-    // Source 6: Read pack_to_open from ob_puz_pac_but (new menu pack buttons)
+    // Source 3: Read pack_to_open from ob_puz_pac_but (new menu pack buttons)
     if (detected_pack == 0)
     {
         var ppb_obj = asset_get_index("ob_puz_pac_but");
@@ -153,6 +130,30 @@ if (keyboard_check_pressed(vk_f10))
                 show_debug_message("  -> detected from ob_puz_pac_but.pack_num: " + string(detected_pack));
             }
         }
+    }
+
+    // Source 4: menu_return_to___pack_to_open
+    if (detected_pack == 0 && variable_global_exists("menu_return_to___pack_to_open"))
+    {
+        if (global.menu_return_to___pack_to_open > 0)
+        {
+            detected_pack = global.menu_return_to___pack_to_open;
+            show_debug_message("  -> detected from menu_return_to___pack_to_open: " + string(detected_pack));
+        }
+    }
+
+    // Source 5: PackReturnPage (old menu system)
+    if (detected_pack == 0 && global.PackReturnPage > 0)
+    {
+        detected_pack = global.PackReturnPage;
+        show_debug_message("  -> detected from PackReturnPage: " + string(detected_pack));
+    }
+
+    // Source 6: global.current_pack_open (fallback - persists after playing a puzzle)
+    if (detected_pack == 0 && global.current_pack_open > 0)
+    {
+        detected_pack = global.current_pack_open;
+        show_debug_message("  -> detected from current_pack_open: " + string(detected_pack));
     }
 
     show_debug_message("  FINAL detected_pack=" + string(detected_pack));
@@ -183,22 +184,111 @@ if (keyboard_check_pressed(vk_f10))
         }
         else if (detected_pack > 0)
         {
-            // Load PI_G to get pack info
             var pack_id = detected_pack;
+            var num_puzzles = 0;
+            var pack_name = "";
+            var load_ok = false;
+
+            // Create unified pieces grid (puzzle number -> piece count)
+            global.as_pieces_grid = ds_grid_create(1, 500);
+
             ini_open("pidsg.ini");
-            var pi_data = ini_read_string("pi", "0", "");
-            ini_close();
-            show_debug_message("Auto-solve: pi_data length=" + string(string_length(pi_data)) + " pack_id=" + string(pack_id));
 
-            if (pi_data != "")
+            if (pack_id == 126)
             {
-                global.as_pi_grid = ds_grid_create(global.PackGridX, global.TotalPacks + 1);
-                ds_grid_read(global.as_pi_grid, pi_data);
+                // Free Puzzles
+                var sp_data = ini_read_string("fp", "0", "");
+                if (sp_data != "")
+                {
+                    var sp_grid = ds_grid_create(1, global.FreePuzQuantity + 1);
+                    ds_grid_read(sp_grid, sp_data);
+                    num_puzzles = global.FreePuzQuantity;
+                    pack_name = "FREE PUZZLES";
+                    for (var q = 1; q <= num_puzzles; q++)
+                    {
+                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                    }
+                    ds_grid_destroy(sp_grid);
+                    load_ok = true;
+                }
+            }
+            else if (pack_id == 7000)
+            {
+                // Challenges / Monthly Jigsaw
+                var sp_data = ini_read_string("chal", "0", "");
+                if (sp_data != "")
+                {
+                    var sp_grid = ds_grid_create(1, global.CurChalNum + 1);
+                    ds_grid_read(sp_grid, sp_data);
+                    num_puzzles = global.CurChalNum;
+                    pack_name = "CHALLENGES";
+                    for (var q = 1; q <= num_puzzles; q++)
+                    {
+                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                    }
+                    ds_grid_destroy(sp_grid);
+                    load_ok = true;
+                }
+            }
+            else if (pack_id == 5000)
+            {
+                // Unlockables
+                var sp_data = ini_read_string("ul", "0", "");
+                if (sp_data != "")
+                {
+                    var sp_grid = ds_grid_create(2, global.TotalUnlockables + 1);
+                    ds_grid_read(sp_grid, sp_data);
+                    num_puzzles = global.TotalUnlockables;
+                    pack_name = "UNLOCKABLES";
+                    for (var q = 1; q <= num_puzzles; q++)
+                    {
+                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                    }
+                    ds_grid_destroy(sp_grid);
+                    load_ok = true;
+                }
+            }
+            else if (pack_id == 6000)
+            {
+                // Figurals
+                var sp_data = ini_read_string("fig", "0", "");
+                if (sp_data != "")
+                {
+                    var sp_grid = ds_grid_create(1, 20);
+                    ds_grid_read(sp_grid, sp_data);
+                    num_puzzles = 19;
+                    pack_name = "FIGURALS";
+                    for (var q = 1; q <= num_puzzles; q++)
+                    {
+                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                    }
+                    ds_grid_destroy(sp_grid);
+                    load_ok = true;
+                }
+            }
+            else
+            {
+                // Normal pack (1-175)
+                var pi_data = ini_read_string("pi", "0", "");
+                if (pi_data != "")
+                {
+                    global.as_pi_grid = ds_grid_create(global.PackGridX, global.TotalPacks + 1);
+                    ds_grid_read(global.as_pi_grid, pi_data);
+                    num_puzzles = ds_grid_get(global.as_pi_grid, 2, pack_id);
+                    pack_name = ds_grid_get(global.as_pi_grid, 1, pack_id);
+                    for (var q = 1; q <= num_puzzles; q++)
+                    {
+                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(global.as_pi_grid, 10 + q, pack_id));
+                    }
+                    load_ok = true;
+                }
+            }
 
-                var num_puzzles = ds_grid_get(global.as_pi_grid, 2, pack_id);
-                var pack_name = ds_grid_get(global.as_pi_grid, 1, pack_id);
-                show_debug_message("Auto-solve: pack_name=" + string(pack_name) + " num_puzzles=" + string(num_puzzles));
+            ini_close();
+            show_debug_message("Auto-solve: pack_id=" + string(pack_id) + " pack_name=" + string(pack_name) + " num_puzzles=" + string(num_puzzles) + " load_ok=" + string(load_ok));
 
+            if (load_ok && num_puzzles > 0)
+            {
                 // Load PC grid (piece counts) from save file
                 var pc_grid = ds_grid_create(1, 500);
                 var savefile = "p" + string(pack_id) + ".ini";
@@ -207,18 +297,18 @@ if (keyboard_check_pressed(vk_f10))
                 if (pc_data != "") { ds_grid_read(pc_grid, pc_data); }
                 ini_close();
 
-                // Count incomplete puzzles using piece counts from save
+                // Count incomplete puzzles
                 global.as_total = 0;
                 global.as_total_already = 0;
                 for (var q = 1; q <= num_puzzles; q++)
                 {
-                    var total_pieces = ds_grid_get(global.as_pi_grid, 10 + q, pack_id);
+                    var total_pieces = ds_grid_get(global.as_pieces_grid, 0, q);
                     var placed_pieces = ds_grid_get(pc_grid, 0, q);
                     if (placed_pieces >= total_pieces && total_pieces > 0)
                     {
                         global.as_total_already += 1;
                     }
-                    else
+                    else if (total_pieces > 0)
                     {
                         global.as_total += 1;
                     }
@@ -245,19 +335,20 @@ if (keyboard_check_pressed(vk_f10))
                 }
                 else
                 {
-                    // Pack already complete - show flash overlay
+                    // Pack already complete
                     global.as_cur_pack_name = pack_name;
                     global.as_pack_total = num_puzzles;
                     global.as_pack_done = num_puzzles;
-                    global.as_complete_flash = 180; // 3 seconds at 60fps
-                    ds_grid_destroy(global.as_pi_grid);
-                    global.as_pi_grid = -1;
+                    global.as_complete_flash = 180;
+                    if (global.as_pi_grid != -1) { ds_grid_destroy(global.as_pi_grid); global.as_pi_grid = -1; }
+                    ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1;
                     show_debug_message("Auto-solve: pack already complete!");
                 }
             }
             else
             {
-                show_debug_message("Auto-solve: ERROR - pidsg.ini pi data is empty!");
+                show_debug_message("Auto-solve: ERROR - could not load pack data for pack_id=" + string(pack_id));
+                ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1;
             }
         }
         else
@@ -273,11 +364,8 @@ if (keyboard_check_pressed(vk_f10))
             global.as_state = 0;
             global.as_phase = 0;
             global.dev_autoresolve_active = 0;
-            if (global.as_pi_grid != -1)
-            {
-                ds_grid_destroy(global.as_pi_grid);
-                global.as_pi_grid = -1;
-            }
+            if (global.as_pi_grid != -1) { ds_grid_destroy(global.as_pi_grid); global.as_pi_grid = -1; }
+            if (global.as_pieces_grid != -1) { ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1; }
             show_debug_message("Auto-solve: dismissed completed overlay");
         }
         else
@@ -319,6 +407,39 @@ if (keyboard_check_pressed(vk_f8) && (global.as_state > 0 || global.as_complete_
         ds_grid_destroy(global.as_pi_grid);
         global.as_pi_grid = -1;
     }
+    if (global.as_pieces_grid != -1)
+    {
+        ds_grid_destroy(global.as_pieces_grid);
+        global.as_pieces_grid = -1;
+    }
+}
+
+// Safety: detect manual puzzle exit (user pressed Escape during auto-solve)
+if (global.as_state > 0 && (global.as_phase == 1 || global.as_phase == 2) && room != asset_get_index("r_puzzle_room"))
+{
+    global.dev_autoresolve_active = 0;
+    if (global.as_pack > 0 && room == global.as_pack_room)
+    {
+        // Back on pack page after manual exit: advance to next puzzle
+        global.as_count += 1;
+        global.as_pack_done += 1;
+        global.as_last_puzzle_num = global.as_cur_puzzle_num;
+        global.as_last_pieces = global.as_cur_pieces;
+        global.as_puzzle += 1;
+        global.as_phase = 0;
+        global.as_timer = round(global.as_cfg_between_delay * 60);
+        if (global.as_state == 2) { global.as_state = 2; } // stay paused if was paused
+        show_debug_message("Auto-solve: manual exit detected, advancing to next puzzle");
+    }
+    else
+    {
+        // Not on pack page: full reset
+        show_debug_message("Auto-solve: manual exit to unknown room, stopping");
+        global.as_state = 0;
+        global.as_phase = 0;
+        if (global.as_pi_grid != -1) { ds_grid_destroy(global.as_pi_grid); global.as_pi_grid = -1; }
+        if (global.as_pieces_grid != -1) { ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1; }
+    }
 }
 
 // Process auto-solve pack
@@ -335,7 +456,7 @@ if (global.as_state == 1)
         {
             // Find next incomplete puzzle in this pack (check piece counts from save)
             var pack_id = global.as_pack;
-            var num_puzzles = ds_grid_get(global.as_pi_grid, 2, pack_id);
+            var num_puzzles = global.as_pack_total;
             var found = false;
 
             // Load current piece counts
@@ -348,7 +469,7 @@ if (global.as_state == 1)
 
             while (!found && global.as_puzzle <= num_puzzles)
             {
-                var total_pieces = ds_grid_get(global.as_pi_grid, 10 + global.as_puzzle, pack_id);
+                var total_pieces = ds_grid_get(global.as_pieces_grid, 0, global.as_puzzle);
                 var placed_pieces = ds_grid_get(pc_grid, 0, global.as_puzzle);
                 if (placed_pieces >= total_pieces && total_pieces > 0)
                 {
@@ -364,8 +485,8 @@ if (global.as_state == 1)
             {
                 var puz = global.as_puzzle;
 
-                // Read piece count from PI_G grid (col 10+Q)
-                var pieces = ds_grid_get(global.as_pi_grid, 10 + puz, pack_id);
+                // Read piece count from unified pieces grid
+                var pieces = ds_grid_get(global.as_pieces_grid, 0, puz);
                 show_debug_message("Auto-solve: puzzle #" + string(puz) + " pieces from PI_G=" + string(pieces));
                 global.as_cur_pieces = pieces;
 
@@ -507,11 +628,8 @@ if (global.as_state == 1)
                 // Pack complete! Keep overlay open with phase 4
                 global.as_pack_done = global.as_pack_total;
                 global.as_phase = 4;
-                if (global.as_pi_grid != -1)
-                {
-                    ds_grid_destroy(global.as_pi_grid);
-                    global.as_pi_grid = -1;
-                }
+                if (global.as_pi_grid != -1) { ds_grid_destroy(global.as_pi_grid); global.as_pi_grid = -1; }
+                if (global.as_pieces_grid != -1) { ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1; }
                 show_debug_message("Auto-solve COMPLETE! Pack " + string(global.as_cur_pack_name) + " done. Solved " + string(global.as_count) + " puzzles.");
             }
         }
