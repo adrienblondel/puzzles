@@ -27,6 +27,7 @@ global.as_last_pack_name = "";
 global.as_last_pieces = 0;
 global.as_pack_done = 0;
 global.as_pack_total = 0;
+global.as_num_puzzles = 0;
 global.as_phase = 0;
 global.as_exit_timer = 0;
 global.as_cfg_exit_delay = 3;

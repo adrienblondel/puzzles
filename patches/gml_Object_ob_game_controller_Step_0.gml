@@ -115,6 +115,16 @@ if (keyboard_check_pressed(vk_f10))
                 show_debug_message("  -> detected from ob_menu_puz_button.pack_num: " + string(detected_pack));
             }
         }
+        // r_uniques_select uses ob_uniques_controller (not ob_menu_puz_button)
+        if (detected_pack == 0)
+        {
+            var uc_obj = asset_get_index("ob_uniques_controller");
+            if (uc_obj >= 0 && instance_exists(uc_obj))
+            {
+                detected_pack = 5000;
+                show_debug_message("  -> detected from ob_uniques_controller: 5000");
+            }
+        }
     }
 
     // Source 3: Read pack_to_open from ob_puz_pac_but (new menu pack buttons)
@@ -196,7 +206,7 @@ if (keyboard_check_pressed(vk_f10))
 
             if (pack_id == 126)
             {
-                // Free Puzzles
+                // Free Puzzles (no locks)
                 var sp_data = ini_read_string("fp", "0", "");
                 if (sp_data != "")
                 {
@@ -214,7 +224,8 @@ if (keyboard_check_pressed(vk_f10))
             }
             else if (pack_id == 7000)
             {
-                // Challenges / Monthly Jigsaw
+                // Challenges / Monthly Jigsaw (locked via kioskchallenges<N>)
+                // Current month puzzle (CurChalNum) is always unlocked
                 var sp_data = ini_read_string("chal", "0", "");
                 if (sp_data != "")
                 {
@@ -224,7 +235,20 @@ if (keyboard_check_pressed(vk_f10))
                     pack_name = "CHALLENGES";
                     for (var q = 1; q <= num_puzzles; q++)
                     {
-                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                        var is_locked = false;
+                        if (q < global.CurChalNum)
+                        {
+                            // Previous puzzles: check lock
+                            var lock_key = "kioskchallenges" + string(q);
+                            if (q <= 87)
+                                is_locked = !steam_get_achievement(lock_key);
+                            else
+                                is_locked = (steam_get_stat_int(lock_key) != 1);
+                        }
+                        if (is_locked)
+                            ds_grid_set(global.as_pieces_grid, 0, q, 0);
+                        else
+                            ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
                     }
                     ds_grid_destroy(sp_grid);
                     load_ok = true;
@@ -232,7 +256,7 @@ if (keyboard_check_pressed(vk_f10))
             }
             else if (pack_id == 5000)
             {
-                // Unlockables
+                // Unlockables (locked via kioskpuzzles<N>)
                 var sp_data = ini_read_string("ul", "0", "");
                 if (sp_data != "")
                 {
@@ -242,7 +266,16 @@ if (keyboard_check_pressed(vk_f10))
                     pack_name = "UNLOCKABLES";
                     for (var q = 1; q <= num_puzzles; q++)
                     {
-                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                        var lock_key = "kioskpuzzles" + string(q);
+                        var is_locked = false;
+                        if (q <= 89)
+                            is_locked = !steam_get_achievement(lock_key);
+                        else
+                            is_locked = (steam_get_stat_int(lock_key) != 1);
+                        if (is_locked)
+                            ds_grid_set(global.as_pieces_grid, 0, q, 0);
+                        else
+                            ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
                     }
                     ds_grid_destroy(sp_grid);
                     load_ok = true;
@@ -250,7 +283,7 @@ if (keyboard_check_pressed(vk_f10))
             }
             else if (pack_id == 6000)
             {
-                // Figurals
+                // Figurals (locked via kioskfigurals<N>)
                 var sp_data = ini_read_string("fig", "0", "");
                 if (sp_data != "")
                 {
@@ -260,7 +293,11 @@ if (keyboard_check_pressed(vk_f10))
                     pack_name = "FIGURALS";
                     for (var q = 1; q <= num_puzzles; q++)
                     {
-                        ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
+                        var lock_key = "kioskfigurals" + string(q);
+                        if (!steam_get_achievement(lock_key))
+                            ds_grid_set(global.as_pieces_grid, 0, q, 0);
+                        else
+                            ds_grid_set(global.as_pieces_grid, 0, q, ds_grid_get(sp_grid, 0, q));
                     }
                     ds_grid_destroy(sp_grid);
                     load_ok = true;
@@ -314,6 +351,7 @@ if (keyboard_check_pressed(vk_f10))
                     }
                 }
                 ds_grid_destroy(pc_grid);
+                global.as_num_puzzles = num_puzzles;
                 show_debug_message("Auto-solve: total_to_do=" + string(global.as_total) + " already_done=" + string(global.as_total_already));
 
                 if (global.as_total > 0)
@@ -321,24 +359,29 @@ if (keyboard_check_pressed(vk_f10))
                     global.as_state = 1;
                     global.as_phase = 0;
                     global.as_pack = pack_id;
-                    global.as_pack_room = room;
-                    global.as_puzzle = 1;
+                    // r_uniques_select reinitializes with only category buttons (no puzzle list),
+                    // so use r_menu_3 as the waiting room between puzzles
+                    if (asset_get_index("r_uniques_select") >= 0 && room == asset_get_index("r_uniques_select"))
+                        global.as_pack_room = asset_get_index("r_menu_3");
+                    else
+                        global.as_pack_room = room;
+                    global.as_puzzle = global.as_num_puzzles; // scan descending to match UI order
                     global.as_count = 0;
                     global.as_timer = 0;
                     global.as_cur_pack_name = pack_name;
                     global.as_cur_pieces = 0;
                     global.as_last_puzzle_num = 0;
                     global.as_last_pieces = 0;
-                    global.as_pack_total = num_puzzles;
+                    global.as_pack_total = global.as_total + global.as_total_already;
                     global.as_pack_done = global.as_total_already;
                     show_debug_message("Auto-solve STARTED: " + string(pack_name) + " - " + string(global.as_total) + " puzzles to solve. pack_room=" + string(room) + " (" + room_get_name(room) + ")");
                 }
                 else
                 {
-                    // Pack already complete
+                    // Pack already complete (all unlocked puzzles done)
                     global.as_cur_pack_name = pack_name;
-                    global.as_pack_total = num_puzzles;
-                    global.as_pack_done = num_puzzles;
+                    global.as_pack_total = global.as_total_already;
+                    global.as_pack_done = global.as_total_already;
                     global.as_complete_flash = 180;
                     if (global.as_pi_grid != -1) { ds_grid_destroy(global.as_pi_grid); global.as_pi_grid = -1; }
                     ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1;
@@ -363,6 +406,7 @@ if (keyboard_check_pressed(vk_f10))
             // Completed state: dismiss overlay
             global.as_state = 0;
             global.as_phase = 0;
+            global.as_pack_room = -1; // clear so subsequent manual puzzles don't stale-navigate
             global.dev_autoresolve_active = 0;
             if (global.as_pi_grid != -1) { ds_grid_destroy(global.as_pi_grid); global.as_pi_grid = -1; }
             if (global.as_pieces_grid != -1) { ds_grid_destroy(global.as_pieces_grid); global.as_pieces_grid = -1; }
@@ -425,7 +469,7 @@ if (global.as_state > 0 && (global.as_phase == 1 || global.as_phase == 2) && roo
         global.as_pack_done += 1;
         global.as_last_puzzle_num = global.as_cur_puzzle_num;
         global.as_last_pieces = global.as_cur_pieces;
-        global.as_puzzle += 1;
+        global.as_puzzle -= 1;
         global.as_phase = 0;
         global.as_timer = round(global.as_cfg_between_delay * 60);
         if (global.as_state == 2) { global.as_state = 2; } // stay paused if was paused
@@ -456,7 +500,7 @@ if (global.as_state == 1)
         {
             // Find next incomplete puzzle in this pack (check piece counts from save)
             var pack_id = global.as_pack;
-            var num_puzzles = global.as_pack_total;
+            var num_puzzles = global.as_num_puzzles; // actual total puzzles (not just unlocked count)
             var found = false;
 
             // Load current piece counts
@@ -467,14 +511,21 @@ if (global.as_state == 1)
             if (pc_data != "") { ds_grid_read(pc_grid, pc_data); }
             ini_close();
 
-            while (!found && global.as_puzzle <= num_puzzles)
+            while (!found && global.as_puzzle >= 1)
             {
                 var total_pieces = ds_grid_get(global.as_pieces_grid, 0, global.as_puzzle);
                 var placed_pieces = ds_grid_get(pc_grid, 0, global.as_puzzle);
-                if (placed_pieces >= total_pieces && total_pieces > 0)
+                if (total_pieces == 0)
+                {
+                    // Locked puzzle (not yet unlocked): skip
+                    show_debug_message("Auto-solve: puzzle #" + string(global.as_puzzle) + " is locked (0 pieces), skipping");
+                    global.as_puzzle -= 1;
+                    continue;
+                }
+                if (placed_pieces >= total_pieces)
                 {
                     show_debug_message("Auto-solve: puzzle #" + string(global.as_puzzle) + " already complete (" + string(placed_pieces) + "/" + string(total_pieces) + "), skipping");
-                    global.as_puzzle += 1;
+                    global.as_puzzle -= 1;
                     continue;
                 }
                 found = true;
@@ -511,7 +562,7 @@ if (global.as_state == 1)
                 if (!file_exists(full_path + ".png"))
                 {
                     show_debug_message("Auto-solve: ERROR - puzzle image not found! Skipping puzzle #" + string(puz));
-                    global.as_puzzle += 1;
+                    global.as_puzzle -= 1;
                 }
                 else
                 {
@@ -520,8 +571,20 @@ if (global.as_state == 1)
                     global.puzzle_number_to_play = puz;
                     global.total_number_of_pieces = pieces;
                     global.puzzle_max_number_of_pieces = pieces;
-                    global.MenuReturnPage = 19;
-                    global.PackReturnPage = pack_id;
+                    // Set return page matching game's own behavior per pack type
+                    if (pack_id == 126)
+                        global.MenuReturnPage = 3;
+                    else if (pack_id == 5000)
+                        global.MenuReturnPage = 5;
+                    else if (pack_id == 6000)
+                        global.MenuReturnPage = 18;
+                    else if (pack_id == 7000)
+                        global.MenuReturnPage = 4;
+                    else
+                    {
+                        global.MenuReturnPage = 19;
+                        global.PackReturnPage = pack_id;
+                    }
 
                     // Load ghost image and determine level_type from sprite width
                     if (global.current_puzzle_ghost_image != 0)
@@ -714,7 +777,7 @@ if (global.as_state == 1)
         global.as_pack_done += 1;
         global.as_last_puzzle_num = global.as_cur_puzzle_num;
         global.as_last_pieces = global.as_cur_pieces;
-        global.as_puzzle += 1;
+        global.as_puzzle -= 1;
         global.as_phase = 0;
         global.as_timer = round(global.as_cfg_between_delay * 60);
         show_debug_message("Auto-solve: back on pack page. " + string(global.as_count) + "/" + string(global.as_total) + " done.");
