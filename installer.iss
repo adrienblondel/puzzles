@@ -5,7 +5,9 @@
 ; Output: Output/PPU_AutoSolve_Setup.exe
 
 #define MyAppName "PPU Auto-Solve Mod"
-#define MyAppVersion "1.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0"
+#endif
 #define MyAppPublisher "PPU Mod"
 
 [Setup]
