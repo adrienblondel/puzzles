@@ -47,7 +47,6 @@ Source: "autosolve.ini"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexis
 const
   GAME_EXE = 'PixelPuzzlesUltimate.exe';
   DATA_WIN = 'data.win';
-  DATA_BACKUP = 'data.win.backup';
 
 // ---- Detection du chemin Steam ----
 
@@ -178,7 +177,7 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  GameDir, BackupPath, DataPath, UtmtExe, PatchDir, Params: String;
+  GameDir, DataPath, UtmtExe, PatchDir, Params: String;
   ResultCode: Integer;
 begin
   if CurStep <> ssPostInstall then
@@ -186,28 +185,14 @@ begin
 
   GameDir := ExpandConstant('{app}');
   DataPath := GameDir + '\' + DATA_WIN;
-  BackupPath := GameDir + '\' + DATA_BACKUP;
   UtmtExe := ExpandConstant('{tmp}\utmt\UndertaleModCli.exe');
   PatchDir := ExpandConstant('{tmp}\patches');
 
-  // Creer le backup si absent
-  if not FileExists(BackupPath) then
-  begin
-    WizardForm.StatusLabel.Caption := 'Creation du backup...';
-    if not CopyFile(DataPath, BackupPath, False) then
-    begin
-      MsgBox('Impossible de creer le backup de ' + DATA_WIN + '.' + #13#10 +
-             'Verifiez les permissions du dossier.',
-             mbError, MB_OK);
-      Abort;
-    end;
-  end;
-
-  // Appliquer le patch
+  // Patch data.win en place (UTMT charge tout en memoire avant d'ecrire)
   WizardForm.StatusLabel.Caption := 'Application du patch (peut prendre quelques minutes)...';
   WizardForm.ProgressGauge.Style := npbstMarquee;
 
-  Params := 'replace "' + BackupPath + '"' +
+  Params := 'replace "' + DataPath + '"' +
     ' -o "' + DataPath + '"' +
     ' -c "gml_Object_ob_game_controller_Create_0=' + PatchDir + '\gml_Object_ob_game_controller_Create_0.gml"' +
     ' -c "gml_Object_ob_game_controller_Step_0=' + PatchDir + '\gml_Object_ob_game_controller_Step_0.gml"' +
@@ -224,7 +209,6 @@ begin
   if ResultCode <> 0 then
   begin
     MsgBox('Le patch a echoue (code de retour: ' + IntToStr(ResultCode) + ').' + #13#10 +
-           'Le backup ' + DATA_BACKUP + ' n''a pas ete modifie.' + #13#10 +
            'Essayez de lancer l''installeur en tant qu''administrateur.',
            mbError, MB_OK);
     Abort;
@@ -235,28 +219,15 @@ end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
-  GameDir, DataPath, BackupPath: String;
+  GameDir: String;
 begin
   if CurUninstallStep <> usUninstall then
     Exit;
 
   GameDir := ExpandConstant('{app}');
-  DataPath := GameDir + '\' + DATA_WIN;
-  BackupPath := GameDir + '\' + DATA_BACKUP;
 
-  if FileExists(BackupPath) then
-  begin
-    if CopyFile(BackupPath, DataPath, False) then
-      MsgBox('Le mod a ete desinstalle.' + #13#10 +
-             DATA_WIN + ' a ete restaure depuis le backup.',
-             mbInformation, MB_OK)
-    else
-      MsgBox('Impossible de restaurer ' + DATA_WIN + '.' + #13#10 +
-             'Vous pouvez restaurer manuellement ' + DATA_BACKUP + ' ou verifier l''integrite via Steam.',
-             mbError, MB_OK);
-  end
-  else
-    MsgBox('Backup introuvable (' + DATA_BACKUP + ').' + #13#10 +
-           'Utilisez "Verifier l''integrite des fichiers" dans Steam pour restaurer le jeu.',
-           mbInformation, MB_OK);
+  MsgBox('Le mod a ete desinstalle.' + #13#10 +
+         'Pour restaurer le jeu original, utilisez "Verifier l''integrite des fichiers du jeu" dans Steam' + #13#10 +
+         '(clic droit sur le jeu > Proprietes > Fichiers locaux).',
+         mbInformation, MB_OK);
 end;

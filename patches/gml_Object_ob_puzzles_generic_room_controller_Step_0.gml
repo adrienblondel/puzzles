@@ -1396,7 +1396,7 @@ if (ExitPuzzle == 1)
         global.a_menu_overlay_is_showing = 0;
         global.camera_is_zoomed_in = 0;
         global.dev_autoresolve_active = 0;
-        if (global.as_state > 0 && global.as_pack_room != -1)
+        if (global.as_pack_room != -1)
         {
             room_goto(global.as_pack_room);
         }
