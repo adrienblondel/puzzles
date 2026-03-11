@@ -1,3 +1,8 @@
+// --- Auto-afficher l'image de référence au chargement du puzzle ---
+if (IntroBlack == 1 && !instance_exists(ob_ref_image) && (global.level_type >= 1 && global.level_type <= 4)) {
+    instance_create(13, 13, ob_ref_image);
+}
+
 // --- Mode auto-resolve (controlled by F10 via ob_game_controller) ---
 // Stopper si le puzzle est terminé
 if (global.dev_autoresolve_active && puzzle_is_over == 1) {
